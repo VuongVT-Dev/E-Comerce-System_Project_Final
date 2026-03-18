@@ -18,17 +18,17 @@ public class User {
     @Column(name = "id_user")
     private Integer id;
 
-    @OneToOne
-    @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
-
-    private String name;
-    private String address;
-    private String phone;
-
-    @OneToMany(mappedBy = "user")
-    public List<Order> orderList;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<Comment> commentList;
+//    @OneToOne
+//    @JoinColumn(name = "account_id", referencedColumnName = "id")
+//    private Account account;
+//
+//    private String name;
+//    private String address;
+//    private String phone;
+//
+//    @OneToMany(mappedBy = "user")
+//    public List<Order> orderList;
+//
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    public List<Comment> commentList;
 }

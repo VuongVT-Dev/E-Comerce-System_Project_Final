@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!value || !value.trim()) return 'Email cannot be empty';
         const regex = /^(?:"(?:[^\x00-\x1F\x22\x5C\x7F-\xFF]|\\[\x20-\x7E])*"|[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]{1,63}(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+){0,31})@(?:(?=.{1,253}$)(?!.*--)(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]{0,61}[\p{L}\p{N}])?\.)+[\p{L}]{2,63})$/u;
         if (!regex.test(value.trim()))
-            return 'Invalid email format (ex: user@example.com)';
+            return 'Invalid email format (ex: user123@example.com)';
         return null;
     }
 
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return data.isValid;
             })
             .catch(error => {
-                console.error('Error verifying password:', error);
+                console.error('Error password:', error);
                 return false;
             });
     }
@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         hasError = true;
                     }
                 } catch (error) {
-                    console.error('Error during password verification:', error);
+                    console.error('Error password:', error);
                     hasError = true;
                 }
             }

@@ -90,9 +90,9 @@ public class Book {
 //    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 //    private List<OrderDetail> orderDetailList;
 //
-//    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-//    private List<CartItem> cartItemList;
-//
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CartItem> cartItemList;
+
 //    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 //    private List<BookTranslator> bookTranslatorList;
 

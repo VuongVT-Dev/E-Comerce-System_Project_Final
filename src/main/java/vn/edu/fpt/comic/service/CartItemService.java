@@ -64,5 +64,10 @@ public class CartItemService {
         return cartItemRepository.findByUserAndBook(user, book).orElse(null);
     }
 
+    public CartItem save(CartItem cartItem) {
+        return cartItemRepository.save(cartItem);
+    }
+
+
 
 }

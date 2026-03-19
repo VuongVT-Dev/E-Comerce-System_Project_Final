@@ -49,7 +49,6 @@ public class CartItemService {
             existingItem.setUpdatedAt(new Date());
             return cartItemRepository.save(existingItem);
         } else {
-            // Tạo CartItem mới
             CartItem newItem = new CartItem();
             newItem.setUser(user);
             newItem.setBook(book);

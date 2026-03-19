@@ -91,7 +91,6 @@ public class CartItemService {
                 cartItemRepository.delete(item);
                 return null;
             } else {
-                // Cập nhật quantity
                 item.setQuantity(quantity);
                 item.setUpdatedAt(new Date());
                 return cartItemRepository.save(item);

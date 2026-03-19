@@ -1,13 +1,12 @@
-package com.thunga.web.repository;
+package vn.edu.fpt.comic.repository;
 
-import com.thunga.web.entity.Account;
+import vn.edu.fpt.comic.entity.Account;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Integer> {
     Account findByUsername(String username);
-
     Account findByEmail(String email);
 }
 

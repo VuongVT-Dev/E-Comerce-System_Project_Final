@@ -1,7 +1,7 @@
-package com.thunga.web.repository;
+package vn.edu.fpt.comic.repository;
 
-import com.thunga.web.entity.Account;
-import com.thunga.web.entity.Admin;
+import vn.edu.fpt.comic.entity.Account;
+import vn.edu.fpt.comic.entity.Admin;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

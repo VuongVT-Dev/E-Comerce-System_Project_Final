@@ -60,5 +60,9 @@ public class CartItemService {
         }
     }
 
+    public CartItem findByUserAndBook(User user, Book book) {
+        return cartItemRepository.findByUserAndBook(user, book).orElse(null);
+    }
+
 
 }

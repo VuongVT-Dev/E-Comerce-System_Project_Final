@@ -4,8 +4,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,5 +51,28 @@ public class AdminController {
         model.addAttribute("bookCountMap", bookCountMap);
         return "admin/language_ad";
     }
+
+    @PostMapping("/admin/create-language")
+    public String adminCreateLanguage(HttpServletRequest request, Model model,
+                                      RedirectAttributes redirectAttributes) {
+        String name = request.getParameter("name");
+        String code = request.getParameter("code");
+
+        Map<String, String> errors = languageService.validateNewLanguage(name, code);
+
+        if (!errors.isEmpty()) {
+            if (errors.containsKey("name")) model.addAttribute("addNameError", errors.get("name"));
+            if (errors.containsKey("code")) model.addAttribute("addCodeError", errors.get("code"));
+            model.addAttribute("formName", name);
+            model.addAttribute("formCode", code);
+            model.addAttribute("showAddModal", true);
+            return adminManageLanguage(model, request.getParameter("page"));
+        }
+
+        languageService.createLanguage(name, code, null);
+        redirectAttributes.addFlashAttribute("successMessage", "Language created successfully");
+        return "redirect:/admin/manage-language";
+    }
+
 
 }

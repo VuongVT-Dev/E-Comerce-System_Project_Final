@@ -117,7 +117,26 @@ public class CartItemService {
         }
     }
 
+    /**
+     * Xóa toàn bộ giỏ hàng
+     */
+    @Transactional
+    public void clearCart(User user) {
+        cartItemRepository.deleteByUser(user);
+    }
 
+    /**
+     * Tính tổng số tiền trong giỏ hàng
+     */
+    public Double calculateTotalAmount(User user) {
+        return cartItemRepository.sumTotalAmountByUser(user);
+    }
 
+    /**
+     * Tính tổng số sách trong giỏ hàng
+     */
+    public Integer calculateTotalBooks(User user) {
+        return cartItemRepository.sumQuantityByUser(user);
+    }
 
 }

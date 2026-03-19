@@ -2,6 +2,9 @@ package vn.edu.fpt.comic.Entities.Service;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import vn.edu.fpt.comic.Entities.Account;
+
+import java.util.Date;
 
 public class AccountService {
     @Override
@@ -31,4 +34,15 @@ public class AccountService {
     }
 
 
+    /**
+     * Update password for an account
+     */
+    public void updatePassword(String email, String newPassword) {
+        Account account = accountRepository.findByEmail(email);
+        if (account != null) {
+            account.setPassword(passwordEncoder.encode(newPassword));
+            account.setUpdated_at(new Date());
+            accountRepository.save(account);
+        }
+    }
 }

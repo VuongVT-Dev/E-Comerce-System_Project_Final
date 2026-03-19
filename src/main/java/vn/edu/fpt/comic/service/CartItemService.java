@@ -75,6 +75,33 @@ public class CartItemService {
         return !cartItemRepository.existsByUser(user);
     }
 
+    /**
+     * Cập nhật số lượng sách trong giỏ
+     */
+    @Transactional
+    public CartItem updateCartItem(User user, Integer bookId, Integer quantity) {
+        Book book = bookService.findById(bookId);
+
+        Optional<CartItem> itemOpt = cartItemRepository.findByUserAndBook(user, book);
+
+        if (itemOpt.isPresent()) {
+            CartItem item = itemOpt.get();
+
+            if (quantity <= 0) {
+                // Xóa item nếu quantity <= 0
+                cartItemRepository.delete(item);
+                return null;
+            } else {
+                // Cập nhật quantity
+                item.setQuantity(quantity);
+                item.setUpdatedAt(new Date());
+                return cartItemRepository.save(item);
+            }
+        }
+
+        return null;
+    }
+
 
 
 }

@@ -68,6 +68,13 @@ public class CartItemService {
         return cartItemRepository.save(cartItem);
     }
 
+    /**
+     * Kiểm tra giỏ hàng có rỗng không
+     */
+    public boolean isCartEmpty(User user) {
+        return !cartItemRepository.existsByUser(user);
+    }
+
 
 
 }

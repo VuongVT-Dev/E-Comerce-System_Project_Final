@@ -1,4 +1,4 @@
-package vn.edu.fpt.comic.Controller;
+package vn.edu.fpt.comic.Entities;
 
 import lombok.*;
 

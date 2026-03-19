@@ -16,4 +16,19 @@ public class AccountService {
                 .authorities("ROLE_" + account.getRole())
                 .build();
     }
+    /**
+     * Check if email already exists
+     */
+    public boolean isEmailExists(String email) {
+        return accountRepository.findByEmail(email) != null;
+    }
+
+    /**
+     * Verify email exists for password reset
+     */
+    public boolean emailExistsForReset(String email) {
+        return accountRepository.findByEmail(email) != null;
+    }
+
+
 }

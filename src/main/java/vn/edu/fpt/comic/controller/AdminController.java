@@ -74,5 +74,32 @@ public class AdminController {
         return "redirect:/admin/manage-language";
     }
 
+    @PostMapping("/admin/edit-language")
+    public String adminEditLanguage(HttpServletRequest request, Model model,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            int id = Integer.parseInt(request.getParameter("id"));
+            String newName = request.getParameter("name");
+
+            Map<String, String> errors = languageService.validateEditLanguage(id, newName);
+
+            if (!errors.isEmpty()) {
+                if (errors.containsKey("name")) model.addAttribute("editNameError", errors.get("name"));
+                model.addAttribute("editLanguageId", String.valueOf(id));
+                model.addAttribute("formName", newName);
+                model.addAttribute("showEditModal", true);
+                return adminManageLanguage(model, request.getParameter("page"));
+            }
+
+            languageService.updateLanguage(id, newName);
+            redirectAttributes.addFlashAttribute("successMessage", "Language updated successfully");
+            return "redirect:/admin/manage-language";
+
+        } catch (NumberFormatException e) {
+            model.addAttribute("errorMessage", "Invalid language ID");
+            return adminManageLanguage(model, request.getParameter("page"));
+        }
+    }
+
 
 }

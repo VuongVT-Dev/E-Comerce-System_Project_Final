@@ -32,5 +32,5 @@ public class Admin {
     @OneToMany(mappedBy = "admin")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    private List<Order> orderList;
+    private List<sOrder> orderList;
 }

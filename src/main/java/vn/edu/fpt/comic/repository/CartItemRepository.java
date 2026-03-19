@@ -26,4 +26,16 @@ public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
     @Query(value = "DELETE FROM cart_item WHERE user_id = :userId AND book_id = :bookId", nativeQuery = true)
     void deleteByUserAndBook(Integer userId, Integer bookId);
 
+    // Xóa tất cả CartItem của user
+    @Modifying
+    void deleteByUser(User user);
+
+    // Tính tổng số sách trong giỏ của user
+    @Query("SELECT COALESCE(SUM(ci.quantity), 0) FROM CartItem ci WHERE ci.user = :user")
+    Integer sumQuantityByUser(User user);
+
+    // Tính tổng giá trị giỏ hàng của user
+    @Query("SELECT COALESCE(SUM(ci.book.price * ci.quantity), 0) FROM CartItem ci WHERE ci.user = :user")
+    Double sumTotalAmountByUser(User user);
+
 }

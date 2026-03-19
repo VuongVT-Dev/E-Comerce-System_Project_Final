@@ -11,8 +11,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AdminRepository extends JpaRepository<Admin, Integer> {
     Admin findByAccount(Account account);
-
     @Query("SELECT a FROM Admin a WHERE a.account.role = 'STAFF'")
     Page<Admin> findAllStaff(Pageable pageable);
-
 }

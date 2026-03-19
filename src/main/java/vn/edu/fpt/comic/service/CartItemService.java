@@ -102,6 +102,22 @@ public class CartItemService {
         return null;
     }
 
+    /**
+     * Xóa sách khỏi giỏ hàng
+     */
+    @Transactional
+    public void removeCartItemByUserAndBook(User user, Integer bookId) {
+        try {
+            if (user != null && bookId != null) {
+                cartItemRepository.deleteByUserAndBook(user.getId(), bookId);
+            }
+        } catch (Exception e) {
+            System.out.println("Error removing cart item: " + e.getMessage());
+            throw new RuntimeException("Failed to remove cart item", e);
+        }
+    }
+
+
 
 
 }

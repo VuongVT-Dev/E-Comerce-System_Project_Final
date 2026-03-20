@@ -41,7 +41,4 @@ public class OrderDetail {
     @Column(name = "created_at")
     private Date created_at;
 
-    @Column(name = "updated_at")
-    private Date updated_at;
-
 }

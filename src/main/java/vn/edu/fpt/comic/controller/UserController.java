@@ -1,7 +1,6 @@
-package com.thunga.web.controller;
+package vn.edu.fpt.comic.controller;
 
-import com.thunga.web.entity.*;
-import com.thunga.web.service.*;
+import vn.edu.fpt.comic.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;

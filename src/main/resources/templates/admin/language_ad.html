@@ -52,3 +52,104 @@
   </style>
 </head>
 <body>
+<header id="tg-header" class="tg-header tg-haslayout">
+  <div class="tg-topbar">
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <div class="tg-userlogin">
+            <div>
+              <li style="list-style:none ;" class="menu-item-has-children"
+                  sec:authorize="isAuthenticated()">
+                <a href=""> <i id="user_icon" class="fa fa-user"></i> Welcome <span
+                        class="sr-only"></span></a>
+                <div class="mega-menu user">
+                  <ul class="tg-themetabnav " role="tablist">
+                    <li><a th:href="@{/profile}">Profile<span class="sr-only">(current)</span></a>
+                    </li>
+                    <li><a class="tg-userlogout" th:href="@{/logout}">Logout<span class="sr-only">(current)</span></a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              <br>
+              <a class="nav-link text" th:href="@{/signup}"
+                 style="margin-right: 30px" sec:authorize="!isAuthenticated()">
+                Sign up<span class="sr-only">(current)</span></a>
+              <a class="nav-link text" th:href="@{/login}"
+                 sec:authorize="!isAuthenticated()">
+                Login<span class="sr-only">(current)</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tg-middlecontainer" style="padding: 10px;">
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <strong class="tg-logo"><a th:href="@{/}"><img src="../images/logo.png"
+                                                         alt="company name here"></a></strong>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tg-navigationarea">
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <nav id="tg-nav" class="tg-nav">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                      data-target="#tg-navigation" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+            </div>
+            <div id="tg-navigation" class="collapse navbar-collapse tg-navigation">
+              <ul>
+                <li><a th:href="@{/}">Home</a></li>
+                <li><a th:href="@{/manage-product}"
+                       sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Books</a></li>
+                <li><a th:href="@{/manage-category}" sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Categories</a>
+                </li>
+                <li><a th:href="@{/manage-author}"
+                       sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Authors</a></li>
+                <li><a th:href="@{/manage-user}" sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Users</a>
+                </li>
+                <li><a th:href="@{/manage-order}"
+                       sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Orders</a></li>
+                <li><a th:href="@{/manage-promotion}" sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Promotions</a>
+                </li>
+                <li><a th:href="@{/statistic}"
+                       sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Statistics</a></li>
+                <li><a th:href="@{/manage-staff}" sec:authorize="hasAnyRole('ADMIN', 'STAFF')">Staff</a>
+                </li>
+                <!-- Hamburger Menu -->
+                <li class="menu-item-has-children" sec:authorize="hasAnyRole('ADMIN', 'STAFF')">
+                  <a href="javascript:void(0);"><i class="fa fa-bars"></i></a>
+                  <div class="mega-menu dropdown-menu-right"
+                       style="position: absolute; min-width: 220px; padding: 0.5rem 0;">
+                    <ul class="list-unstyled mb-0">
+                      <li><a th:href="@{/manage-series}" class="dropdown-item"><i
+                              class="fa fa-book mr-2"></i> Series</a></li>
+                      <li><a th:href="@{/manage-language}" class="dropdown-item"><i
+                              class="fa fa-flag mr-2"></i> Language</a></li>
+                      <li><a th:href="@{/manage-publisher}" class="dropdown-item"><i
+                              class="fa fa-briefcase mr-2"></i> Publisher</a></li>
+                      <li><a th:href="@{/manage-translator}" class="dropdown-item"><i
+                              class="fa fa-users mr-2"></i> Translator</a></li>
+                    </ul>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

@@ -1,4 +1,4 @@
-package vn.edu.fpt.comic.Entities.Service;
+package vn.edu.fpt.comic.Service;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

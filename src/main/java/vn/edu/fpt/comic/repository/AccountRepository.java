@@ -1,12 +1,13 @@
-package com.thunga.web.repository
+package com.thunga.web.repository;
 
-import com.thunga.web.entity.Account
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Repository
+import com.thunga.web.entity.Account;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 @Repository
-interface AccountRepository : JpaRepository<Account?, Int?> {
-fun findByUsername(username: String?): Account?
+public interface AccountRepository extends JpaRepository<Account, Integer> {
+    Account findByUsername(String username);
 
-fun findByEmail(email: String?): Account?
-        }
+    Account findByEmail(String email);
+}
+

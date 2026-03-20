@@ -80,23 +80,25 @@ public class CartItemService {
     @Transactional
     public CartItem updateCartItem(User user, Integer bookId, Integer quantity) {
         Book book = bookService.findById(bookId);
+        if (book == null)
+            throw new IllegalArgumentException("Book not found!");
+
+        if (quantity <= 0)
+            throw new IllegalArgumentException("Quantity must be at least 1!");
 
         Optional<CartItem> itemOpt = cartItemRepository.findByUserAndBook(user, book);
-
         if (itemOpt.isPresent()) {
             CartItem item = itemOpt.get();
 
-            if (quantity <= 0) {
-                // Xóa item nếu quantity <= 0
-                cartItemRepository.delete(item);
-                return null;
-            } else {
-                item.setQuantity(quantity);
-                item.setUpdatedAt(new Date());
-                return cartItemRepository.save(item);
-            }
-        }
+            if (quantity > book.getNumber_in_stock())
+                throw new IllegalStateException(
+                        "Only " + book.getNumber_in_stock() + " copies available!"
+                );
 
+            item.setQuantity(quantity);
+            item.setUpdatedAt(new Date());
+            return cartItemRepository.save(item);
+        }
         return null;
     }
 

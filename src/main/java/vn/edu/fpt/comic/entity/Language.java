@@ -21,16 +21,3 @@ public class Language {
     @Column(name = "name", nullable = false, unique = true, length = 50)
     private String name;
 
-    @Column(name = "code", nullable = false, unique = true, length = 10)
-    private String code;
-
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date created_at;
-
-    @Column(name = "updated_at")
-    private Date updated_at;
-
-    @OneToMany(mappedBy = "language", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Book> bookList;
-}

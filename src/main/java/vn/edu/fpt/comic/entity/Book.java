@@ -93,7 +93,11 @@ public class Book(){
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<BookTranslator> bookTranslatorList;
 
+    @Transient
+    private MultipartFile fileData;
 
+    @Transient
+    private boolean newBook;
 
 }
 

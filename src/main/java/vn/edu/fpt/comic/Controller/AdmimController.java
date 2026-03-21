@@ -4,7 +4,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import vn.edu.fpt.comic.Entities.Account;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,5 +81,18 @@ public class AdmimController {
             account.setUpdated_at(new Date());
             accountRepository.save(account);
         }
+    }
+    public void cleanupExpiredOTPs() {
+        LocalDateTime now = LocalDateTime.now();
+
+        otpExpiryStorage.entrySet().removeIf(entry -> {
+            if (now.isAfter(entry.getValue())) {
+                String email = entry.getKey();
+                clearOTP(email);
+                resetTokenStorage.remove(email);
+                return true;
+            }
+            return false;
+        });
     }
 }

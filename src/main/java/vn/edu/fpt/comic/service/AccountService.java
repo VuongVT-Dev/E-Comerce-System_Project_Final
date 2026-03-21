@@ -1,536 +1,431 @@
-package com.thunga.web.service;
+package vn.edu.fpt.comic.service;
 
-import vn.edu.fpt.comic.entity.*;
-import vn.edu.fpt.comic.repository.BookRepository;
-import vn.edu.fpt.comic.repository.BookTranslatorRepository;
+import vn.edu.fpt.comic.entity.Account;
+import vn.edu.fpt.comic.repository.AccountRepository;
+import org.apache.commons.validator.EmailValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class BookService {
-    @Autowired
-    private BookRepository bookRepository;
+public class AccountService implements UserDetailsService {
 
     @Autowired
-    private AuthorService authorService;
+    private AccountRepository accountRepository;
 
     @Autowired
-    private CategoryService categoryService;
+    private EmailService emailService;
 
-    @Autowired
-    private LanguageService languageService;
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    @Autowired
-    private PublisherService publisherService;
 
-    @Autowired
-    private SeriesService seriesService;
+    private EmailValidator emailValidator = EmailValidator.getInstance();
 
-    @Autowired
-    private TranslatorService translatorService;
+    // ==================== GENERIC OTP STORAGE ====================
+    // Map: email -> OTP code
+    private Map<String, String> otpStorage = new ConcurrentHashMap<>();
 
-    @Autowired
-    private BookTranslatorRepository bookTranslatorRepository;
+    // Map: email -> Expiry time
+    private Map<String, LocalDateTime> otpExpiryStorage = new ConcurrentHashMap<>();
 
-    @Value("${file.upload-dir:uploads}")
-    private String uploadDir;
+    // Map: email -> Purpose (signup, password_reset)
+    private Map<String, String> otpPurposeStorage = new ConcurrentHashMap<>();
 
-    public List<Book> findAll() {
-        return bookRepository.findAll();
+    // Map: email -> Temporary form data
+    private Map<String, Map<String, String>> formDataStorage = new ConcurrentHashMap<>();
+
+    // Map: email -> Reset token (cho password reset)
+    private Map<String, String> resetTokenStorage = new ConcurrentHashMap<>();
+
+    private static final int OTP_EXPIRY_MINUTES = 5;
+    private static final String PURPOSE_SIGNUP = "signup";
+    private static final String PURPOSE_PASSWORD_RESET = "password_reset";
+    private static final String RESET_TOKEN_PREFIX = "RESET_";
+
+    // ==================== CRUD METHODS ====================
+
+    public List<Account> findAll() {
+        return accountRepository.findAll();
     }
 
-    public Book findById(Integer id) {
-        return bookRepository.findById(id).orElse(null);
+    public Account findByUsername(String username) {
+        return accountRepository.findByUsername(username);
     }
 
-    public List<Book> findByTitle(String title) {
-        return bookRepository.findByTitle(title);
+    public Account findByEmail(String email) {
+        return accountRepository.findByEmail(email);
     }
 
-    public void deleteById(Integer id) {
-        bookRepository.deleteById(id);
+    public Account save(Account account) {
+        return accountRepository.save(account);
     }
 
-
-    public Book save(Book book) {
-        return bookRepository.save(book);
+    public void delete(Account account) {
+        accountRepository.delete(account);
     }
 
-    public Book findBestSoldBook() {
-        return bookRepository.findBestSoldBook();
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Account account = accountRepository.findByUsername(username);
+        if (account == null) {
+            throw new UsernameNotFoundException("Account not found: " + username);
+        }
+        return org.springframework.security.core.userdetails.User
+                .withUsername(account.getUsername())
+                .password(account.getPassword())
+                .authorities("ROLE_" + account.getRole())
+                .build();
     }
 
+    // ==================== GENERIC OTP METHODS ====================
 
-    public Page<Book> getFilteredAndSortedBooks(
-            String keyword,
-            Integer categoryId,
-            Double priceMin,
-            Double priceMax,
-            String sortBy,
-            Integer page,
-            Integer pageSize) {
+    /**
+     * Generate and send OTP - Reusable for any purpose (signup, password reset, etc.)
+     *
+     * @param email   Email address
+     * @param purpose Purpose of OTP: "signup" or "password_reset"
+     * @return OTP code (6 digits)
+     */
+    public String generateAndSendOTP(String email, String purpose) {
+        Random random = new Random();
+        String otp = String.format("%06d", random.nextInt(1000000));
 
-        List<Book> bookList = new ArrayList<>();
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
+        otpStorage.put(email, otp);
+        otpExpiryStorage.put(email, expiryTime);
+        otpPurposeStorage.put(email, purpose);
 
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            keyword = keyword.trim();
-            Set<Book> resultSet = new LinkedHashSet<>();
+        emailService.sendOTPEmail(email, otp);
 
-            // Find by title
-            List<Book> booksByTitle = bookRepository.findByTitleContainingIgnoreCase(keyword);
-            if (booksByTitle != null) {
-                resultSet.addAll(booksByTitle);
-            }
-
-            // Find by author
-            List<Book> booksByAuthor = bookRepository.findByAuthor_NameContainingIgnoreCase(keyword);
-            if (booksByAuthor != null) {
-                resultSet.addAll(booksByAuthor);
-            }
-
-            // Find by category name
-            Category category = categoryService.findByName(keyword);
-            if (category != null) {
-                List<Book> booksByCategory = bookRepository.findByCategory(category);
-                if (booksByCategory != null) {
-                    resultSet.addAll(booksByCategory);
-                }
-            }
-
-            bookList = new ArrayList<>(resultSet);
-
-        } else if (categoryId != null) {
-            // BROWSE MODE: Find by category (including subcategories)
-            List<Integer> categoryIds = categoryService.getAllCategoryIdsInHierarchy(categoryId);
-            bookList = bookRepository.findByCategoryIdIn(categoryIds);
-            if (bookList == null) {
-                bookList = new ArrayList<>();
-            }
-
-        } else {
-            bookList = bookRepository.findAll();
-        }
-
-        // ============ STEP 2: PRICE FILTER ============
-        boolean hasMin = priceMin != null && priceMin > 0;
-        boolean hasMax = priceMax != null;
-        if (hasMin || hasMax) {
-            bookList.removeIf(book -> {
-                if (book.getPrice() == null) return true;
-                if (hasMin && book.getPrice() < priceMin) return true;
-                if (hasMax && book.getPrice() > priceMax) return true;
-                return false;
-            });
-        }
-
-        if (sortBy != null && !sortBy.trim().isEmpty()) {
-            switch (sortBy.toLowerCase()) {
-                case "title":
-                    // A → Z
-                    bookList.sort((b1, b2) -> {
-                        String t1 = b1.getTitle() != null ? b1.getTitle() : "";
-                        String t2 = b2.getTitle() != null ? b2.getTitle() : "";
-                        return t1.compareToIgnoreCase(t2);
-                    });
-                    break;
-
-                case "title_desc":
-                    // Z → A
-                    bookList.sort((b1, b2) -> {
-                        String t1 = b1.getTitle() != null ? b1.getTitle() : "";
-                        String t2 = b2.getTitle() != null ? b2.getTitle() : "";
-                        return t2.compareToIgnoreCase(t1);
-                    });
-                    break;
-
-                case "price":
-                    // Price Low → High
-                    bookList.sort((b1, b2) -> {
-                        Double p1 = b1.getPrice();
-                        Double p2 = b2.getPrice();
-                        if (p1 == null && p2 == null) return 0;
-                        if (p1 == null) return 1;
-                        if (p2 == null) return -1;
-                        return p1.compareTo(p2);
-                    });
-                    break;
-
-                case "price_desc":
-                    // Price High → Low
-                    bookList.sort((b1, b2) -> {
-                        Double p1 = b1.getPrice();
-                        Double p2 = b2.getPrice();
-                        if (p1 == null && p2 == null) return 0;
-                        if (p1 == null) return 1;
-                        if (p2 == null) return -1;
-                        return p2.compareTo(p1);
-                    });
-                    break;
-
-                case "newest":
-                    // Newest first (by created_at DESC)
-                    bookList.sort((b1, b2) -> {
-                        if (b1.getCreated_at() == null && b2.getCreated_at() == null) return 0;
-                        if (b1.getCreated_at() == null) return 1;
-                        if (b2.getCreated_at() == null) return -1;
-                        return b2.getCreated_at().compareTo(b1.getCreated_at());
-                    });
-                    break;
-
-                case "bestseller":
-                    // Best seller (by number_sold DESC)
-                    bookList.sort((b1, b2) -> {
-                        Integer sold1 = b1.getNumber_sold() != null ? b1.getNumber_sold() : 0;
-                        Integer sold2 = b2.getNumber_sold() != null ? b2.getNumber_sold() : 0;
-                        return sold2.compareTo(sold1);
-                    });
-                    break;
-            }
-        }
-
-        int totalElements = bookList.size();
-        int start = page * pageSize;
-        int end = Math.min(start + pageSize, totalElements);
-
-        if (start >= totalElements) {
-            return new PageImpl<>(new ArrayList<>(), PageRequest.of(page, pageSize), totalElements);
-        }
-
-        List<Book> pageContent = bookList.subList(start, end);
-        Pageable pageable = PageRequest.of(page, pageSize);
-        return new PageImpl<>(pageContent, pageable, totalElements);
+        return otp;
     }
 
-    public Book updateInfo(Book newBook, HttpServletRequest request, Translator translator) throws IOException {
-        Book updateBook;
-        Category category = categoryService.findByName(request.getParameter("categoryInfo"));
-        Author author = authorService.findByName(request.getParameter("authorInfo"));
+    /**
+     * Verify OTP - Reusable for any purpose
+     *
+     * @param email    Email address
+     * @param inputOtp OTP entered by user
+     * @param purpose  Expected purpose of OTP
+     * @return true if OTP is valid, false otherwise
+     */
+    public boolean verifyOTP(String email, String inputOtp, String purpose) {
+        String storedOtp = otpStorage.get(email);
+        LocalDateTime expiryTime = otpExpiryStorage.get(email);
+        String storedPurpose = otpPurposeStorage.get(email);
 
-        String languageParam = request.getParameter("languageInfo");
-        Language language = (languageParam != null && !languageParam.isEmpty())
-                ? languageService.findByName(languageParam) : null;
-
-        String publisherParam = request.getParameter("publisherInfo");
-        Publisher publisher = (publisherParam != null && !publisherParam.isEmpty())
-                ? publisherService.findByName(publisherParam) : null;
-
-        String seriesParam = request.getParameter("seriesInfo");
-        Series series = (seriesParam != null && !seriesParam.isEmpty())
-                ? seriesService.findByName(seriesParam) : null;
-
-        String volumeNumberParam = request.getParameter("volumeNumber");
-        Integer volumeNumber = null;
-        if (volumeNumberParam != null && !volumeNumberParam.isEmpty()) {
-            try {
-                volumeNumber = Integer.valueOf(volumeNumberParam);
-            } catch (NumberFormatException e) {
-                // Ignore invalid volume number
-            }
-        }
-
-        String stockParam = request.getParameter("stock");
-        Integer stock = null;
-        if (stockParam != null && !stockParam.isEmpty()) {
-            try {
-                stock = Integer.valueOf(stockParam);
-            } catch (NumberFormatException e) {
-                // Ignore invalid stock
-            }
-        }
-
-        String size = request.getParameter("size");
-
-        String weightParam = request.getParameter("weight_kg");
-        Double weight = null;
-        if (weightParam != null && !weightParam.trim().isEmpty()) {
-            try {
-                weight = Double.parseDouble(weightParam.trim());
-            } catch (NumberFormatException e) {
-                // Ignore invalid weight - use null
-            }
-        }
-
-        if (newBook.getId() != null) {
-            updateBook = bookRepository.findById(newBook.getId()).get();
-            updateBook.setCategory(category);
-            updateBook.setDescription(newBook.getDescription());
-            updateBook.setDate_publication(newBook.getDate_publication());
-            updateBook.setPrice(newBook.getPrice());
-            updateBook.setLanguage(language);
-            updateBook.setPublisher(publisher);
-            updateBook.setSeries(series);
-            updateBook.setVolumeNumber(volumeNumber);
-            updateBook.setNumber_in_stock(stock);
-            updateBook.setSize(size);
-            updateBook.setWeight_kg(weight);
-            updateBook.setUpdated_at(new Date());
-        } else {
-            updateBook = newBook;
-            updateBook.setAuthor(author);
-            updateBook.setCategory(category);
-            updateBook.setLanguage(language);
-            updateBook.setPublisher(publisher);
-            updateBook.setSeries(series);
-            updateBook.setVolumeNumber(volumeNumber);
-            updateBook.setNumber_in_stock(stock != null ? stock : 0);
-            updateBook.setNumber_sold(0);
-            updateBook.setSize(size);
-            updateBook.setWeight_kg(weight);
-            updateBook.setCreated_at(new Date());
-        }
-
-        if (newBook.getFileData() != null && !newBook.getFileData().isEmpty()) {
-            File uploadFolder = new File(System.getProperty("user.dir") + File.separator + uploadDir);
-            if (!uploadFolder.exists()) {
-                boolean created = uploadFolder.mkdirs();
-                if (!created) {
-                    throw new IOException("Could not create upload directory: " + uploadFolder.getAbsolutePath());
-                }
-            }
-
-            String originalFilename = newBook.getFileData().getOriginalFilename();
-            String sanitized = originalFilename == null ? "image" : originalFilename.replaceAll("[^a-zA-Z0-9.\\-_]", "_");
-            String uniqueName = System.currentTimeMillis() + "_" + sanitized;
-            File destFile = new File(uploadFolder, uniqueName);
-            try (FileOutputStream fos = new FileOutputStream(destFile)) {
-                fos.write(newBook.getFileData().getBytes());
-            }
-            updateBook.setImage("/uploads/" + uniqueName);
-        }
-
-        String imageUrl = newBook.getImage() != null ? newBook.getImage() : request.getParameter("imageUrl");
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            updateBook.setImage(imageUrl);
-        }
-
-        updateBook = bookRepository.save(updateBook);
-
-        if (translator != null && updateBook.getId() != null) {
-            boolean translatorExists = false;
-            if (updateBook.getBookTranslatorList() != null) {
-                for (BookTranslator bt : updateBook.getBookTranslatorList()) {
-                    if (bt.getTranslator().getId().equals(translator.getId())) {
-                        translatorExists = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!translatorExists) {
-                BookTranslator bookTranslator = new BookTranslator();
-                bookTranslator.setBook(updateBook);
-                bookTranslator.setTranslator(translator);
-                bookTranslator.setRole("Translator");
-                bookTranslator.setCreated_at(new Date());
-                bookTranslatorRepository.save(bookTranslator);
-            }
-        }
-
-        return updateBook;
-    }
-
-    public boolean hasCompletedOrderWithBook(User user, Book book) {
-        if (user == null || user.getOrderList() == null) {
+        if (storedOtp == null || expiryTime == null || storedPurpose == null) {
             return false;
         }
 
-        for (Order order : user.getOrderList()) {
-            if ("Completed".equals(order.getStatus())) {
-                if (order.getOrderDetailList() != null) {
-                    for (OrderDetail orderDetail : order.getOrderDetailList()) {
-                        if (orderDetail.getBook().getId().equals(book.getId())) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    public List<Book> findByTitleIgnoreCase(String title) {
-        return bookRepository.findByTitleIgnoreCase(title);
-    }
-
-    public boolean isDuplicateBook(String title, Integer authorId, Integer excludeBookId) {
-        if (title == null || authorId == null) {
+        // Check if purpose matches
+        if (!storedPurpose.equals(purpose)) {
             return false;
         }
 
-        List<Book> existingBooks = findByTitleIgnoreCase(title);
+        // Check if OTP is expired
+        if (LocalDateTime.now().isAfter(expiryTime)) {
+            clearOTP(email);
+            return false;
+        }
 
-        if (existingBooks != null && !existingBooks.isEmpty()) {
-            for (Book existingBook : existingBooks) {
-                if (excludeBookId != null && existingBook.getId().equals(excludeBookId)) {
-                    continue;
-                }
-
-                if (existingBook.getAuthor() != null &&
-                        existingBook.getAuthor().getId().equals(authorId)) {
-                    return true;
-                }
-            }
+        // Check if OTP matches
+        if (storedOtp.equals(inputOtp)) {
+            // Remove OTP after successful verification
+            otpStorage.remove(email);
+            otpExpiryStorage.remove(email);
+            otpPurposeStorage.remove(email);
+            return true;
         }
 
         return false;
     }
 
-    public List<Book> findBySeriesExcludingCurrent(Integer seriesId, Integer currentBookId) {
-        return bookRepository.findBySeriesIdAndIdNot(seriesId, currentBookId);
+    /**
+     * Resend OTP - Reusable for any purpose
+     *
+     * @param email   Email address
+     * @param purpose Purpose of OTP
+     */
+    public void resendOTP(String email, String purpose) {
+        // Clear existing OTP
+        clearOTP(email);
+        // Generate new OTP
+        generateAndSendOTP(email, purpose);
     }
 
-    public boolean validateBook(Book book) {
-        if (book == null || book.getTitle() == null || book.getAuthor() == null) {
+    /**
+     * Clear OTP data for an email
+     *
+     * @param email Email address
+     */
+    private void clearOTP(String email) {
+        otpStorage.remove(email);
+        otpExpiryStorage.remove(email);
+        otpPurposeStorage.remove(email);
+    }
+
+    /**
+     * Check if OTP exists and is not expired
+     *
+     * @param email Email address
+     * @return true if OTP exists and not expired
+     */
+    public boolean hasValidOTP(String email) {
+        String otp = otpStorage.get(email);
+        LocalDateTime expiryTime = otpExpiryStorage.get(email);
+
+        if (otp == null || expiryTime == null) {
             return false;
         }
 
-        return !isDuplicateBook(book.getTitle(), book.getAuthor().getId(), book.getId());
+        return !LocalDateTime.now().isAfter(expiryTime);
     }
-
-    public String getBookValidationErrorMessage() {
-        return "A book with the same title and author already exists";
-    }
-
-    // ==================== NEW METHODS FOR HOME PAGE SECTIONS ====================
 
     /**
-     * Get personalized book recommendations for a user based on their purchase history
-     * Books are selected from categories the user has purchased from
-     * Books are sorted by popularity (number_sold DESC)
-     * Excludes books already purchased by the user
+     * Get OTP expiry time remaining in seconds
      *
-     * @param userId The user ID
-     * @param limit  Maximum number of recommendations
-     * @return List of recommended books, or empty list if user not found
+     * @param email Email address
+     * @return Remaining seconds, or 0 if expired/not found
      */
-    public List<Book> getRecommendedBooksForUser(Integer userId, int limit) {
-        try {
-            if (userId == null || userId <= 0) {
-                return new ArrayList<>();
+    public long getOTPExpirySeconds(String email) {
+        LocalDateTime expiryTime = otpExpiryStorage.get(email);
+        if (expiryTime == null) {
+            return 0;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isAfter(expiryTime)) {
+            return 0;
+        }
+
+        return java.time.temporal.ChronoUnit.SECONDS.between(now, expiryTime);
+    }
+
+    // ==================== FORM DATA STORAGE ====================
+
+    /**
+     * Store form data temporarily (for signup process)
+     *
+     * @param email    Email address
+     * @param formData Form data map
+     */
+    public void storeFormData(String email, Map<String, String> formData) {
+        formDataStorage.put(email, new HashMap<>(formData));
+    }
+
+    /**
+     * Retrieve stored form data
+     *
+     * @param email Email address
+     * @return Form data map or null
+     */
+    public Map<String, String> getFormData(String email) {
+        return formDataStorage.get(email);
+    }
+
+    /**
+     * Clear form data and all related OTP data
+     *
+     * @param email Email address
+     */
+    public void clearFormData(String email) {
+        formDataStorage.remove(email);
+        clearOTP(email);
+        resetTokenStorage.remove(email);
+    }
+
+    // ==================== PASSWORD RESET TOKEN ====================
+
+    /**
+     * Generate reset token after OTP verification
+     *
+     * @param email Email address
+     * @return Reset token
+     */
+    public String generateResetToken(String email) {
+        String resetToken = RESET_TOKEN_PREFIX + System.currentTimeMillis() + "_" + email;
+        resetTokenStorage.put(email, resetToken);
+        return resetToken;
+    }
+
+    /**
+     * Verify and consume reset token
+     *
+     * @param email Email address
+     * @param token Reset token
+     * @return true if token is valid
+     */
+    public boolean verifyResetToken(String email, String token) {
+        String storedToken = resetTokenStorage.get(email);
+        return storedToken != null && storedToken.equals(token);
+    }
+
+    /**
+     * Clear reset token
+     *
+     * @param email Email address
+     */
+    public void clearResetToken(String email) {
+        resetTokenStorage.remove(email);
+    }
+
+    // ==================== VALIDATION METHODS ====================
+
+    /**
+     * Validate account registration data
+     *
+     * @return Map of field errors (field name -> error message)
+     */
+    public Map<String, String> validateAccountRegistration(String userName, String password,
+                                                           String confirmPassword, String fullName,
+                                                           String email, String address) {
+        Map<String, String> errors = new HashMap<>();
+
+        // Validate userName
+        if (userName == null || userName.trim().isEmpty()) {
+            errors.put("userName", "Username must not be empty");
+        } else if (userName.length() < 3 || userName.length() > 20) {
+            errors.put("userName", "Username must be between 3 and 20 characters");
+        } else if (!userName.matches("^(?=.*[A-Za-z])[A-Za-z0-9_]+$")) {
+            errors.put("userName", "Username can only contain letters, numbers");
+        } else {
+            Account existingAccount = accountRepository.findByUsername(userName);
+            if (existingAccount != null) {
+                errors.put("userName", "Username is already in use");
             }
+        }
 
-            // Get all books and filter based on user's purchase history
-            List<Book> allBooks = bookRepository.findAll();
+        // Validate password
+        if (password == null || password.trim().isEmpty()) {
+            errors.put("password", "Password must not be empty");
+        } else if (password.length() < 6) {
+            errors.put("password", "Password must be at least 6 characters long");
+        } else if (password.length() > 20) {
+            errors.put("password", "Password must not exceed 20 characters");
+        } else if (!password.matches("^(?=.*[A-Za-z])(?=.*\\d).+$")) {
+            errors.put("password", "Password must contain at least one letter and one number");
+        }
 
-            if (allBooks == null || allBooks.isEmpty()) {
-                return new ArrayList<>();
+        // Validate confirmPassword
+        if (confirmPassword == null || confirmPassword.trim().isEmpty()) {
+            errors.put("confirmPassword", "Confirm password must not be empty");
+        } else if (!confirmPassword.equals(password)) {
+            errors.put("confirmPassword", "The verification password does not match");
+        }
+
+        // Validate fullName
+        if (fullName == null || fullName.trim().isEmpty()) {
+            errors.put("fullName", "Full name must not be empty");
+        } else if (fullName.length() < 2 || fullName.length() > 50) {
+            errors.put("fullName", "Full name must be between 2 and 50 characters");
+        } else if (!fullName.matches("^([A-Z][a-z]+)(\\s[A-Z][a-z]+)*$")) {
+            errors.put("fullName", "Full name must be capitalized each word (ex: Nguyen Van A)");
+        }
+
+        // Validate email
+        if (email == null || email.trim().isEmpty()) {
+            errors.put("email", "Email must not be empty");
+        } else if (!emailValidator.isValid(email)) {
+            errors.put("email", "Invalid email address");
+        } else {
+            Account existingAccount = accountRepository.findByEmail(email);
+            if (existingAccount != null) {
+                errors.put("email", "Email is already in use");
             }
+        }
 
-            // This is a simplified implementation
-            // For better performance, use a native SQL query in the repository
-            Set<Book> recommendedBooks = new LinkedHashSet<>();
-            List<Book> result = new ArrayList<>();
+        // Validate address
+        if (address == null || address.trim().isEmpty()) {
+            errors.put("address", "Address must not be empty");
+        } else if (address.length() < 2 || address.length() > 50) {
+            errors.put("address", "Address must be between 2 and 50 characters");
+        } else if (!address.matches("^(?!.*[.,#/^()'\\-]{2,})(?!-)[A-Za-z0-9\\s.,#/^()'\\-]{2,50}$")) {
+            errors.put("address", "Invalid address format (ex: 123 Main St, Chicago)");
+        }
 
-            // If no complex recommendation logic needed, return best-selling books
-            for (Book book : allBooks) {
-                if (book.getNumber_in_stock() != null && book.getNumber_in_stock() > 0) {
-                    result.add(book);
-                }
-            }
+        return errors;
+    }
 
-            // Sort by number_sold (popularity) DESC
-            result.sort((b1, b2) -> {
-                Integer sold1 = b1.getNumber_sold() != null ? b1.getNumber_sold() : 0;
-                Integer sold2 = b2.getNumber_sold() != null ? b2.getNumber_sold() : 0;
-                return sold2.compareTo(sold1);
-            });
+    /**
+     * Validate password (for password reset)
+     */
+    public Map<String, String> validatePassword(String newPassword, String confirmPassword) {
+        Map<String, String> errors = new HashMap<>();
 
-            // Return limited results
-            return result.size() > limit ? result.subList(0, limit) : result;
+        // Validate newPassword
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            errors.put("newPassword", "Password must not be empty");
+        } else if (newPassword.length() < 6) {
+            errors.put("newPassword", "Password must be at least 6 characters long");
+        } else if (newPassword.length() > 20) {
+            errors.put("newPassword", "Password must not exceed 20 characters");
+        }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
+        // Validate confirmPassword
+        if (confirmPassword == null || confirmPassword.trim().isEmpty()) {
+            errors.put("confirmPassword", "Confirm password must not be empty");
+        } else if (newPassword != null && !confirmPassword.equals(newPassword)) {
+            errors.put("confirmPassword", "The verification password does not match");
+        }
+
+        return errors;
+    }
+
+    /**
+     * Check if username already exists
+     */
+    public boolean isUsernameExists(String username) {
+        return accountRepository.findByUsername(username) != null;
+    }
+
+    /**
+     * Check if email already exists
+     */
+    public boolean isEmailExists(String email) {
+        return accountRepository.findByEmail(email) != null;
+    }
+
+    /**
+     * Verify email exists for password reset
+     */
+    public boolean emailExistsForReset(String email) {
+        return accountRepository.findByEmail(email) != null;
+    }
+
+    /**
+     * Update password for an account
+     */
+    public void updatePassword(String email, String newPassword) {
+        Account account = accountRepository.findByEmail(email);
+        if (account != null) {
+            account.setPassword(passwordEncoder.encode(newPassword));
+            account.setUpdated_at(new Date());
+            accountRepository.save(account);
         }
     }
 
     /**
-     * Get newly added books (New Arrivals)
-     * Books are sorted by creation date in descending order
-     *
-     * @param limit Maximum number of books to return
-     * @return List of newest books
+     * Cleanup expired OTPs (should be called periodically)
      */
-    public List<Book> getNewArrivals(int limit) {
-        try {
-            List<Book> allBooks = bookRepository.findAll();
+    public void cleanupExpiredOTPs() {
+        LocalDateTime now = LocalDateTime.now();
 
-            if (allBooks == null || allBooks.isEmpty()) {
-                return new ArrayList<>();
+        otpExpiryStorage.entrySet().removeIf(entry -> {
+            if (now.isAfter(entry.getValue())) {
+                String email = entry.getKey();
+                clearOTP(email);
+                resetTokenStorage.remove(email);
+                return true;
             }
-
-            // Filter books with created_at date
-            List<Book> newBooks = new ArrayList<>();
-            for (Book book : allBooks) {
-                if (book.getCreated_at() != null) {
-                    newBooks.add(book);
-                }
-            }
-
-            // Sort by created_at DESC (newest first)
-            newBooks.sort((b1, b2) -> {
-                if (b1.getCreated_at() == null && b2.getCreated_at() == null) return 0;
-                if (b1.getCreated_at() == null) return 1;
-                if (b2.getCreated_at() == null) return -1;
-                return b2.getCreated_at().compareTo(b1.getCreated_at());
-            });
-
-            // Return limited results
-            return newBooks.size() > limit ? newBooks.subList(0, limit) : newBooks;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
-    }
-
-    /**
-     * Get most popular books based on sales count
-     * Books are sorted by number_sold in descending order
-     *
-     * @param limit Maximum number of books to return
-     * @return List of best-selling books
-     */
-    public List<Book> getMostPopularBooks(int limit) {
-        try {
-            List<Book> allBooks = bookRepository.findAll();
-
-            if (allBooks == null || allBooks.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            // Filter books in stock
-            List<Book> popularBooks = new ArrayList<>();
-            for (Book book : allBooks) {
-                if (book.getNumber_in_stock() != null && book.getNumber_in_stock() > 0) {
-                    popularBooks.add(book);
-                }
-            }
-
-            // Sort by number_sold DESC (most popular first)
-            popularBooks.sort((b1, b2) -> {
-                Integer sold1 = b1.getNumber_sold() != null ? b1.getNumber_sold() : 0;
-                Integer sold2 = b2.getNumber_sold() != null ? b2.getNumber_sold() : 0;
-                return sold2.compareTo(sold1);
-            });
-
-            // Return limited results
-            return popularBooks.size() > limit ? popularBooks.subList(0, limit) : popularBooks;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+            return false;
+        });
     }
 }

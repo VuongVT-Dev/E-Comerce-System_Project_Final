@@ -1,0 +1,595 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Book Library | Manage Staff - Admin</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/normalize.css">
+    <link rel="stylesheet" href="../css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/icomoon.css">
+    <link rel="stylesheet" href="../css/jquery-ui.css">
+    <link rel="stylesheet" href="../css/owl.carousel.css">
+    <link rel="stylesheet" href="../css/transitions.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/color.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="../js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
+    <style>
+        .modal-body .form-group {
+            margin-bottom: 15px;
+        }
+
+        .modal-body label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .modal-body input, .modal-body textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .modal-body textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-error {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 6px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: none;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ============================= HEADER START ============================= -->
+<header id="tg-header" class="tg-header tg-haslayout">
+    <div class="tg-topbar">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <div class="tg-userlogin">
+                        <div>
+                            <li style="list-style:none;" class="menu-item-has-children"
+                                sec:authorize="isAuthenticated()">
+                                <a href="">
+                                    <i id="user_icon" class="fa fa-user"></i> Welcome
+                                    <span th:if="${currentUserName != null}" th:text="${currentUserName}"></span>
+                                    <span class="sr-only"></span>
+                                </a>
+                                <div class="mega-menu user">
+                                    <ul class="tg-themetabnav" role="tablist">
+                                        <li><a th:href="@{/profile}">Profile<span
+                                                class="sr-only">(current)</span></a></li>
+                                        <li sec:authorize="hasRole('USER')">
+                                            <a th:href="@{/orders}">Orders<span class="sr-only">(current)</span></a>
+                                        </li>
+                                        <li><a class="tg-userlogout" th:href="@{/logout}">Logout<span
+                                                class="sr-only">(current)</span></a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                            <br>
+                            <a class="nav-link text" th:href="@{/signup}" style="margin-right: 30px"
+                               sec:authorize="!isAuthenticated()">Sign up<span class="sr-only">(current)</span></a>
+                            <a class="nav-link text" th:href="@{/login}"
+                               sec:authorize="!isAuthenticated()">Login<span class="sr-only">(current)</span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tg-middlecontainer" style="padding: 10px;">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <strong class="tg-logo"><a href="/"><img src="/images/logoSWP.png"
+                                                             alt="company name here"></a></strong>
+
+                    <div class="tg-wishlistandcart">
+                        <div sec:authorize="hasRole('USER')" class="dropdown tg-themedropdown tg-minicartdropdown">
+                            <a id=class="tg-btnthemedropdown" data-toggle="dropdown"
+                               aria-haspopup="true" aria-expanded="false">
+                                    <span class="tg-themebadge"
+                                          th:text="${cartTotalBooks != null ? cartTotalBooks : 0}"></span>
+                                <a th:href="@{view-cart}"><i class="icon-cart"></i>
+                                    <span style="margin-left: 10px;">Cart</span></a>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tg-navigationarea">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <nav id="tg-nav" class="tg-nav">
+                        <div class="navbar-header">
+                            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                                    data-target="#tg-navigation" aria-expanded="false">
+                                <span class="sr-only">Toggle navigation</span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </button>
+                        </div>
+                        <div id="tg-navigation" class="collapse navbar-collapse tg-navigation">
+                            <ul>
+                                <li><a th:href="@{/}">Home</a></li>
+
+                                <!-- ========== USER ========== -->
+                                <li>
+                                    <a th:href="@{/products}"
+                                       sec:authorize="!hasRole('ADMIN') and !hasRole('STAFF')">Books</a>
+                                </li>
+
+                                <li class="menu-item-has-children menu-item-has-mega-menu"
+                                    sec:authorize="hasRole('USER')">
+                                    <a href="javascript:void(0);">All Categories</a>
+                                    <div class="mega-menu tg-category-mega-menu">
+                                        <ul class="tg-themetabnav" role="tablist">
+                                            <li th:each="entry, iterStat : ${categoryHierarchy}"
+                                                th:class="${iterStat.index == 0 ? 'active' : ''}"
+                                                role="presentation">
+                                                <a th:href="'#cat' + ${entry.key.id}"
+                                                   role="tab" data-toggle="tab"
+                                                   th:text="${entry.key.name}">Root Category</a>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content tg-themetabcontent">
+                                            <div th:each="entry, iterStat : ${categoryHierarchy}"
+                                                 th:id="|cat${entry.key.id}|"
+                                                 role="tabpanel"
+                                                 th:class="${iterStat.index == 0 ? 'tab-pane active' : 'tab-pane'}">
+                                                <ul class="tg-level1-container">
+                                                    <li th:each="level1 : ${entry.value}">
+                                                        <div class="tg-linkstitle">
+                                                            <h2 th:text="${level1.name}">Level 1</h2>
+                                                        </div>
+                                                        <ul th:if="${level1.children != null}">
+                                                            <li th:each="level2 : ${level1.children}">
+                                                                <a th:href="@{/products(categoryId=${level2.id})}"
+                                                                   th:text="${level2.name}">Level 2</a>
+                                                                <ul th:if="${level2.children != null}">
+                                                                    <li th:each="level3 : ${level2.children}">
+                                                                        <a th:href="@{/products(categoryId=${level3.id})}"
+                                                                           th:text="${level3.name}">Level 3</a>
+                                                                    </li>
+                                                                </ul>
+                                                            </li>
+                                                        </ul>
+                                                        <a class="tg-btnviewall"
+                                                           th:href="@{/products(categoryId=${level1.id})}">View
+                                                            All</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+
+                                <!-- ========== ADMIN ========== -->
+                                <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/manage-product}">Books</a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')"><a
+                                        th:href="@{/admin/manage-category}">Categories</a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')"><a
+                                        th:href="@{/admin/manage-author}">Authors</a></li>
+                                <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/manage-user}">Users</a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/manage-order}">Orders</a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')"><a
+                                        th:href="@{/admin/manage-promotion}">Promotions</a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/statistic}">Statistics</a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/manage-staff}">Staff</a>
+                                </li>
+                                <li class="menu-item-has-children" sec:authorize="hasRole('ADMIN')">
+                                    <a href="javascript:void(0);"><i class="fa fa-bars"></i></a>
+                                    <div class="mega-menu">
+                                        <ul>
+                                            <li><a th:href="@{/admin/manage-series}"><i class="fa fa-book"></i>
+                                                Series</a></li>
+                                            <li><a th:href="@{/admin/manage-language}"><i class="fa fa-flag"></i>
+                                                Language</a></li>
+                                            <li><a th:href="@{/admin/manage-publisher}"><i
+                                                    class="fa fa-briefcase"></i> Publisher</a></li>
+                                            <li><a th:href="@{/admin/manage-translator}"><i class="fa fa-users"></i>
+                                                Translator</a></li>
+                                            <li><a th:href="@{/admin/manage-comment}"><i class="fa fa-comments"></i>
+                                                Reviews</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+
+                                <!-- ========== STAFF ========== -->
+                                <li sec:authorize="hasRole('STAFF')"><a th:href="@{/staff/books}">Books</a></li>
+                                <li sec:authorize="hasRole('STAFF')"><a th:href="@{/staff/orders}">My Orders</a>
+                                </li>
+                                <li sec:authorize="hasRole('STAFF')"><a
+                                        th:href="@{/staff/categories}">Categories</a></li>
+                                <li sec:authorize="hasRole('STAFF')"><a th:href="@{/staff/authors}">Authors</a></li>
+                                <li sec:authorize="hasRole('STAFF')"><a
+                                        th:href="@{/staff/promotions}">Promotions</a></li>
+                                <li class="menu-item-has-children" sec:authorize="hasRole('STAFF')">
+                                    <a href="javascript:void(0);"><i class="fa fa-bars"></i></a>
+                                    <div class="mega-menu">
+                                        <ul>
+                                            <li><a th:href="@{/staff/series}"><i class="fa fa-book"></i> Series</a>
+                                            </li>
+                                            <li><a th:href="@{/staff/languages}"><i class="fa fa-flag"></i> Language</a>
+                                            </li>
+                                            <li><a th:href="@{/staff/publishers}"><i class="fa fa-briefcase"></i>
+                                                Publisher</a></li>
+                                            <li><a th:href="@{/staff/translators}"><i class="fa fa-users"></i>
+                                                Translator</a></li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- ============================= HEADER END ============================= -->
+<div class="tg-innerbanner tg-haslayout tg-parallax tg-bginnerbanner" data-z-index="-100" data-appear-top-offset="600"
+     data-parallax="scroll" data-image-src="../images/parallax/bgparallax-07.jpg">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <div class="tg-innerbannercontent">
+                    <h1 style="margin-bottom: 20px;">Manage Staff</h1>
+                    <ol class="tg-breadcrumb">
+                        <li><a href="javascript:void(0);">Home</a></li>
+                        <li class="tg-active">Staff</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<main id="tg-main" class="tg-main tg-haslayout">
+    <div class="tg-sectionspace tg-haslayout" style="padding-top: 50px;">
+        <div class="container">
+
+            <div style="margin-bottom: 10px; text-align: left;">
+                <button type="button" class="btn btn-success" id="addStaffBtn">
+                    <i class="fa fa-plus"></i> Add New Staff
+                </button>
+            </div>
+
+            <div class="row">
+                <div>
+                    <div>
+                        <div id="tg-content" class="tg-content">
+                            <div class="tg-products">
+                                <div class="tg-productgrid">
+                                    <div class="row">
+                                        <table class="table table-bordered">
+                                            <tr>
+                                                <th>No.</th>
+                                                <th>Full name</th>
+                                                <th>Phone</th>
+                                                <th>Email</th>
+                                                <th>Address</th>
+                                                <th>Active Orders</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                            <tr th:each="staff, iterStat : ${staffList}" class="active-row">
+                                                <td th:text="${iterStat.count}"></td>
+
+                                                <td th:text="${staff.name}"></td>
+                                                <td th:text="${staff.phone}"></td>
+                                                <td th:text="${staff.account.email}"></td>
+                                                <td th:text="${staff.address}"></td>
+                                                <td th:text="${activeOrdersMap[staff.id]}"></td>
+                                                <td>
+                                                    <a th:href="@{|/admin/edit-staff?id=${staff.id}|}">
+                                                        <button type="button" class="btn btn-warning">View</button>
+                                                    </a>
+                                                    <button type="button" class="btn btn-danger" data-toggle="modal"
+                                                            th:data-target="${'#myModal_delete_staff' + staff.id}"
+                                                            th:disabled="${activeOrdersMap[staff.id] > 0}">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+
+                                    <tr th:each="staff: ${staffList}">
+                                        <div class="modal fade" th:id="${'myModal_delete_staff' + staff.id}"
+                                             tabindex="-1" role="dialog"
+                                             th:attr="aria-labelledby=${'myModalDeleteStaffLabel' + staff.id}">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <button type="button" class="close" data-dismiss="modal"
+                                                                aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                        <h4 th:if="${activeOrdersMap[staff.id] == 0}"
+                                                            class="modal-title"
+                                                            th:id="${'myModalDeleteStaffLabel' + staff.id}"
+                                                            style="text-transform: none;">
+                                                            Are you sure you want to delete this staff member?</h4>
+                                                        <h4 th:if="${activeOrdersMap[staff.id] > 0}" class="modal-title"
+                                                            th:id="${'myModalDeleteStaffLabel' + staff.id}"
+                                                            style="text-transform: none;">
+                                                            Cannot delete a staff member with active orders</h4>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <button th:if="${activeOrdersMap[staff.id] > 0}" type="button"
+                                                                class="btn btn-default" data-dismiss="modal">OK
+                                                        </button>
+                                                        <button th:if="${activeOrdersMap[staff.id] == 0}" type="button"
+                                                                class="btn btn-default" data-dismiss="modal">Cancel
+                                                        </button>
+                                                        <a th:if="${activeOrdersMap[staff.id] == 0}"
+                                                           th:href="@{|/admin/delete-staff?id=${staff.id}|}">
+                                                            <button type="submit" class="btn btn-primary">Confirm
+                                                            </button>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </tr>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav aria-label="Page navigation" style="text-align: center;">
+            <ul class="pagination">
+                <li th:classappend="${page == 1} ? 'disabled'">
+                    <a th:if="${page > 1}" th:href="@{/manage-staff(page=${page - 1})}">&laquo;</a>
+                    <span th:if="${page == 1}">&laquo;</span>
+                </li>
+                <li th:each="i : ${#numbers.sequence(1, totalPage)}" th:classappend="${i == page} ? 'active'">
+                    <a th:href="@{/manage-staff(page=${i})}" th:text="${i}"></a>
+                </li>
+                <li th:classappend="${page == totalPage} ? 'disabled'">
+                    <a th:if="${page < totalPage}" th:href="@{/manage-staff(page=${page + 1})}">&raquo;</a>
+                    <span th:if="${page == totalPage}">&raquo;</span>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</main>
+
+<!--  UPDATED: Modal form - Removed OTP, Single form only -->
+<div class="modal fade" id="createStaffModal" tabindex="-1" role="dialog" aria-labelledby="createStaffModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="createStaffModalLabel" style="text-transform: none;">Add New Staff
+                    Member</h4>
+            </div>
+
+            <!-- Staff Registration Form -->
+            <form id="createStaffForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="staff_name">Full Name <span style="color: red;">*</span></label>
+                        <input type="text" class="form-control" id="staff_name" name="name"
+                               placeholder="Enter full name" required>
+                        <span class="form-error" id="error_staff_name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff_username">Username <span style="color: red;">*</span></label>
+                        <input type="text" class="form-control" id="staff_username" name="username"
+                               placeholder="Enter username" required>
+                        <span class="form-error" id="error_staff_username"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff_email">Email <span style="color: red;">*</span></label>
+                        <input type="email" class="form-control" id="staff_email" name="email"
+                               placeholder="Enter email address" required>
+                        <span class="form-error" id="error_staff_email"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff_phone">Phone Number <span style="color: red;">*</span></label>
+                        <input type="text" class="form-control" id="staff_phone" name="phone"
+                               placeholder="Enter phone" pattern="0\d{9}" required>
+                        <span class="form-error" id="error_staff_phone"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff_address">Address <span style="color: red;">*</span></label>
+                        <input type="text" class="form-control" id="staff_address" name="address"
+                               placeholder="Enter address" required>
+                        <span class="form-error" id="error_staff_address"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff_password">Password <span style="color: red;">*</span></label>
+                        <input type="password" class="form-control" id="staff_password" name="password"
+                               placeholder="Enter password" required>
+                        <span class="form-error" id="error_staff_password"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff_confirmPassword">Confirm Password <span
+                                style="color: red;">*</span></label>
+                        <input type="password" class="form-control" id="staff_confirmPassword"
+                               name="confirmPassword"
+                               placeholder="Re-enter password" required>
+                        <span class="form-error" id="error_staff_confirmPassword"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="createStaffBtn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer id="tg-footer" class="tg-footer tg-haslayout">
+    <div class="tg-footerarea">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <ul class="tg-clientservices">
+                        <li class="tg-devlivery">
+                            <span class="tg-clientserviceicon"><i class="icon-rocket"></i></span>
+                            <div class="tg-titlesubtitle">
+                                <h3>Shipping</h3>
+                                <p>Fast nationwide delivery</p>
+                            </div>
+                        </li>
+                        <li class="tg-discount">
+                            <span class="tg-clientserviceicon"><i class="icon-tag"></i></span>
+                            <div class="tg-titlesubtitle">
+                                <h3>Pricing</h3>
+                                <p>Attractive and reasonable</p>
+                            </div>
+                        </li>
+                        <li class="tg-quality">
+                            <span class="tg-clientserviceicon"><i class="icon-leaf"></i></span>
+                            <div class="tg-titlesubtitle">
+                                <h3>Quality</h3>
+                                <p>Top quality products</p>
+                            </div>
+                        </li>
+                        <li class="tg-support">
+                            <span class="tg-clientserviceicon"><i class="icon-heart"></i></span>
+                            <div class="tg-titlesubtitle">
+                                <h3>Support 24/7</h3>
+                                <p>Service at any time</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tg-threecolumns">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        <div class="tg-footercol">
+                            <strong class="tg-logo"><a href="javascript:void(0);"><img src="../images/flogo.png"
+                                                                                       alt="image description"></a></strong>
+                            <div class="tg-searchbox">
+                                <div class="tg-widget tg-widgetsearch">
+                                    <form class="tg-formtheme tg-formsearch" th:action="@{/search}">
+                                        <div class="form-group">
+                                            <input type="search" name="keyword" class="form-control"
+                                                   placeholder="Search with author, title, category... ">
+                                            <button type="submit"><i class="icon-magnifier"></i></button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="tg-wishlistandcart">
+                                <div sec:authorize="hasRole('USER')"
+                                     class="dropdown tg-themedropdown tg-minicartdropdown">
+                                    <a id="tg-minicart" class="tg-btnthemedropdown" data-toggle="dropdown"
+                                       aria-haspopup="true" aria-expanded="false">
+                                    <span class="tg-themebadge"
+                                          th:text=""></span>
+                                        <a th:href="@{view-cart}"><i class="icon-cart"></i>
+                                            <span style="margin-left: 10px;">Cart</span></a>
+                                    </a>
+                                </div>
+                            </div>
+                            <ul class="tg-contactinfo">
+                                <li><i class="icon-apartment"></i>
+                                    <address>Ha Dong, Hanoi, Vietnam</address>
+                                </li>
+                                <li><i class="icon-phone-handset"></i><span><em>0812 567 889</em><em>+84 1245 6767</em></span>
+                                </li>
+                                <li><i class="icon-clock"></i><span>Serving 7 days a week from 9:00 - 22:00</span></li>
+                                <li>
+                                    <i class="icon-envelope"></i>
+                                    <span>
+                                        <em><a href="mailto:support@domain.com">support@booklibrary.com</a></em>
+                                        <em><a href="mailto:info@domain.com">info@booklibrary.com</a></em>
+                                    </span>
+                                </li>
+                            </ul>
+                            <ul class="tg-socialicons">
+                                <li class="tg-facebook"><a href="javascript:void(0);"><i class="fa fa-facebook"></i></a>
+                                </li>
+                                <li class="tg-twitter"><a href="javascript:void(0);"><i class="fa fa-twitter"></i></a>
+                                </li>
+                                <li class="tg-linkedin"><a href="javascript:void(0);"><i class="fa fa-linkedin"></i></a>
+                                </li>
+                                <li class="tg-googleplus"><a href="javascript:void(0);"><i
+                                        class="fa fa-google-plus"></i></a></li>
+                                <li class="tg-rss"><a href="javascript:void(0);"><i class="fa fa-rss"></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        <div class="tg-footercol tg-widget tg-widgetnavigation">
+                            <div class="tg-widgettitle"><h3>We guarantee</h3></div>
+                            <div class="tg-widgetcontent">
+                                <ul>
+                                    <li><a href="javascript:void(0);">Always respect customers</a></li>
+                                    <li><a href="javascript:void(0);">Protect necessary information</a></li>
+                                    <li><a href="javascript:void(0);">Genuine books</a></li>
+                                    <li><a href="javascript:void(0);">Comply with buying and selling regulations</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tg-footerbar">
+        <a id="tg-btnbacktotop" class="tg-btnbacktotop" href="javascript:void(0);"><i class="icon-chevron-up"></i></a>
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <span class="tg-paymenttype"><img src="../images/paymenticon.png" alt="image description"></span>
+                    <span class="tg-copyright">2023 All Rights Reserved By &copy; Book Library</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="../js/vendor/jquery-library.js"></script>
+<script src="../js/vendor/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../js/owl.carousel.min.js"></script>
+<script src="../js/jquery.vide.min.js"></script>
+<script src="../js/countdown.js"></script>
+<script src="../js/jquery-ui.js"></script>
+<script src="../js/parallax.js"></script>
+<script src="../js/countTo.js"></script>
+<script src="../js/appear.js"></script>
+<script src="../js/gmap3.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/staff_form_validation.js"></script>
+
+</body>
+</html>

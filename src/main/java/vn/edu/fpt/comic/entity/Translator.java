@@ -1,4 +1,4 @@
-package com.thunga.web.entity;
+package vn.edu.fpt.comic.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

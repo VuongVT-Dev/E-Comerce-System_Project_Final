@@ -2,7 +2,6 @@ package vn.edu.fpt.comic.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import javax.persistence.*;
 import java.util.Date;
 
@@ -10,37 +9,29 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "order_detail")
-public class OrderDetail {
-
+public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "book_id")
     private Book book;
 
-    @Column(name = "number")
-    private Integer number;
+    @OneToOne
+    @JoinColumn(name = "order_detail_id")
+    private OrderDetail orderDetail;
 
-    @Column(name = "total_cost")
-    private Double total_cost;
+    private Integer star;
+    private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "series_id")
-    private Series series;
+    @Column(name = "status", nullable = false)
+    private String status;
 
-    @Column(name = "is_full_series")
-    private Boolean isFullSeries = false;
-
-    @Column(name = "created_at")
     private Date created_at;
-
-    @Column(name = "updated_at")
     private Date updated_at;
 }

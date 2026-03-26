@@ -382,6 +382,10 @@
                                            th:if="${order.payment_method == 'COD'}">
                                         (Cash On Delivery)
                                     </small>
+                                    <!-- VNPAY -->
+                                    <span class="label label-primary"
+                                          th:if="${order.payment_method == 'VNPAY'}"
+                                          th:text="${order.payment_method}"></span>
                                 </td>
                             </tr>
 

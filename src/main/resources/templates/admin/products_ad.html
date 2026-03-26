@@ -250,7 +250,8 @@
                                             <form class="tg-formtheme tg-formsortshoitemss"
                                                   th:action="@{/admin/manage-product}" method="get">
                                                 <input type="hidden" name="page" value="1">
-                                                <select name="sortBy" onchange="this.form.submit()">
+                                                <select style="margin-left: 160px;" name="sortBy"
+                                                        onchange="this.form.submit()">
                                                     <option value="">---Choose Sort---</option>
                                                     <option value="title" th:selected="${sortBy == 'title'}">
                                                         Title: A → Z

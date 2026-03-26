@@ -707,14 +707,14 @@
                                     </a>
 
                                     <!-- Assign staff -->
-                                    <button th:if="${order.status == 'Pending' or order.status == 'Assigned'}"
+                                    <button th:if="${order.status == 'Pending' or order.status == 'Assigned'
+                                             or (order.status == 'Approved' and order.payment_status == 'PAID' and order.admin == null)}"
                                             type="button" class="btn btn-success btn-sm"
                                             data-toggle="modal"
                                             th:data-target="${'#myModal_assign'+order.id}"
                                             title="Assign">
                                         <i class="fa fa-user-plus"></i>
                                     </button>
-
 
                                     <!-- Request: review button -->
                                     <button th:if="${order.status == 'Request'}"
@@ -729,7 +729,8 @@
                             </tr>
 
                             <!-- MODAL: Assign Staff -->
-                            <div th:if="${order.status == 'Pending' or order.status == 'Assigned'}"
+                            <div th:if="${order.status == 'Pending' or order.status == 'Assigned'
+                                    or (order.status == 'Approved' and order.payment_status == 'PAID' and order.admin == null)}"
                                  class="modal fade"
                                  th:id="${'myModal_assign'+order.id}"
                                  tabindex="-1" role="dialog">

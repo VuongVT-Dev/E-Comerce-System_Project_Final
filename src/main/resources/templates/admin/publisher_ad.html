@@ -108,19 +108,9 @@
         <div class="container">
             <div class="row">
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                    <strong class="tg-logo"><a href="index-2.html"><img src="images/logoSWP.png"
-                                                                        alt="company name here"></a></strong>
-                    <div class="tg-searchbox">
-                        <div class="tg-widget tg-widgetsearch">
-                            <form class="tg-formtheme tg-formsearch" th:action="@{/search}">
-                                <div class="form-group">
-                                    <input type="search" name="keyword" class="form-control"
-                                           placeholder="Search with author, title, category... ">
-                                    <button type="submit"><i class="icon-magnifier"></i></button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                    <strong class="tg-logo"><a href="/"><img src="/images/logoSWP.png"
+                                                             alt="company name here"></a></strong>
+
                     <div class="tg-wishlistandcart">
                         <div sec:authorize="hasRole('USER')" class="dropdown tg-themedropdown tg-minicartdropdown">
                             <a id="tg-minicart" class="tg-btnthemedropdown" data-toggle="dropdown" aria-haspopup="true"

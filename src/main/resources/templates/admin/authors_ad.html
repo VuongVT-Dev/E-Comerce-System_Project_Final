@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="../css/main.css">
     <link rel="stylesheet" href="../css/color.css">
     <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="../js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
 </head>
 <body>
@@ -62,8 +63,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                    <strong class="tg-logo"><a href="index-2.html"><img src="/images/logoSWP.png"
-                                                                        alt="company name here"></a></strong>
+                    <strong class="tg-logo"><a href="/"><img src="/images/logoSWP.png"
+                                                             alt="company name here"></a></strong>
                     <div class="tg-wishlistandcart">
                         <div sec:authorize="hasRole('USER')" class="dropdown tg-themedropdown tg-minicartdropdown">
                             <a id="tg-minicart" class="tg-btnthemedropdown" data-toggle="dropdown"
@@ -244,19 +245,6 @@
                                     <button type="button" class="btn btn-primary" data-toggle="modal" style="margin-bottom: 5px;"
                                             th:data-target="${'#myModal_add'}">Add new author
                                     </button>
-                                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible" role="alert" style="margin-bottom: 15px;">
-                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                        <strong>Error!</strong> <span th:text="${errorMessage}"></span>
-                                    </div>
-
-                                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible" role="alert" style="margin-bottom: 15px;">
-                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                        <strong>Success!</strong> <span th:text="${successMessage}"></span>
-                                    </div>
                                     <div class="row">
                                         <table class="table table-bordered">
                                             <tr>
@@ -274,7 +262,6 @@
                                                     <td th:text="${author.description}" style="max-width: 160px;"></td>
                                                     <td th:text="${author.bookList.size()}"></td>
                                                     <td>
-                                                        <!-- <a href="user_detail_ad.html"><button type="button" class="btn btn-info">Details</button></a> -->
                                                         <button type="button" class="btn btn-warning" data-toggle="modal" th:data-target="${'#myModal_edit'+author.id}">Edit</button>
                                                         <button type="button"
                                                                 class="btn btn-danger"
@@ -288,7 +275,6 @@
 
                                                 </tr>
                                                 <!-- Modal Edit: dynamic ID for h4 and aria-labelledby -->
-                                                <!-- Trong th:block th:each="author: ${authorList}" -->
                                                 <div class="modal fade" th:id="${'myModal_edit'+author.id}" tabindex="-1" role="dialog"
                                                      th:attr="aria-labelledby=${'myModalEditLabel'+author.id}">
                                                     <div class="modal-dialog" role="document">
@@ -552,18 +538,41 @@
 <script src="../js/appear.js"></script>
 <script src="../js/gmap3.js"></script>
 <script src="../js/main.js"></script>
-<script th:if="${showAddModal}">
-    $(document).ready(function () {
-        $('#myModal_add').modal('show');
-    });
-</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var showAddModal    = /*[[${showAddModal}]]*/ false;
+    var showEditModal   = /*[[${showEditModal}]]*/ false;
+    var editAuthorId    = /*[[${editAuthorId}]]*/ null;
+    var successMessage  = /*[[${successMessage}]]*/ null;
+    var errorMessage    = /*[[${errorMessage}]]*/ null;
 
-<script th:if="${showEditModal != null and showEditModal and editAuthorId != null}"
-        th:inline="javascript">
     $(document).ready(function () {
-        var editAuthorId = /*[[${editAuthorId}]]*/ '';
-        $('#myModal_edit' + editAuthorId).modal('show');
+        if (successMessage) {
+            Swal.fire({
+                position: 'top',
+                icon: 'success',
+                title: successMessage,
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+        }
+        if (errorMessage) {
+            Swal.fire({
+                position: 'top',
+                icon: 'error',
+                title: errorMessage,
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+        }
+
+        if (showAddModal)  $('#myModal_add').modal('show');
+        if (showEditModal && editAuthorId) $('#myModal_edit' + editAuthorId).modal('show');
     });
+    /*]]>*/
 </script>
 </body>
 

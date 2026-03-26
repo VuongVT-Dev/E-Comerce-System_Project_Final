@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.*;
 
 @Controller
-public class MainController implements ErrorController {
+public class AdminController implements ErrorController {
 
     @Autowired
     private BookService bookService;

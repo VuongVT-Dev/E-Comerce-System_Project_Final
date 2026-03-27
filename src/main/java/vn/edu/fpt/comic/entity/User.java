@@ -20,7 +20,6 @@ public class User {
     @OneToOne
     @JoinColumn(name = "account_id", referencedColumnName = "id")
     private Account account;
-
     private String name;
     private String address;
     private String phone;

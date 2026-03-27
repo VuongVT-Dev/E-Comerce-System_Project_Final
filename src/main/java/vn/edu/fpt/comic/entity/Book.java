@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @Entity
 @Table(name = "book")
-public class Book(){
+public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -98,6 +98,5 @@ public class Book(){
 
     @Transient
     private boolean newBook;
-
 }
 

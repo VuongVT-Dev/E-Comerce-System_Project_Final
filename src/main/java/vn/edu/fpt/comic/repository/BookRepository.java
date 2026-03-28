@@ -1,8 +1,7 @@
-package  vn.edu.fpt.comic.repository;
+package vn.edu.fpt.comic.repository;
 
-import jdk.jfr.Category;
-import  vn.edu.fpt.comic.entity.Book;
-
+import vn.edu.fpt.comic.entity.Book;
+import vn.edu.fpt.comic.entity.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

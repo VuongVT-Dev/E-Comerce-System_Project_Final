@@ -1,7 +1,7 @@
 package vn.edu.fpt.comic.repository;
 
 import vn.edu.fpt.comic.entity.Book;
-import vn.edu.fpt.comic.CartItem;
+import vn.edu.fpt.comic.entity.CartItem;
 import vn.edu.fpt.comic.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

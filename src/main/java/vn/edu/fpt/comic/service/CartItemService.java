@@ -3,7 +3,7 @@ package vn.edu.fpt.comic.service;
 import vn.edu.fpt.comic.entity.Book;
 import vn.edu.fpt.comic.entity.CartItem;
 import vn.edu.fpt.comic.entity.User;
-import vn.edu.fpt.comic.CartItemRepository;
+import vn.edu.fpt.comic.repository.CartItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

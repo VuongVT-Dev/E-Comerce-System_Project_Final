@@ -7,8 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import com.thunga.web.entity.OrderDetail;
-import com.thunga.web.repository.OrderDetailRepository;
+import vn.edu.fpt.comic.entity.OrderDetail;
+import vn.edu.fpt.comic.repository.OrderDetailRepository;
 
 @Service
 public class OrderDetailService {
